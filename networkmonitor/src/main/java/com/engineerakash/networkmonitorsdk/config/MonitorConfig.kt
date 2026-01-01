@@ -5,14 +5,14 @@ package com.engineerakash.networkmonitorsdk.config
  */
 data class MonitorConfig(
     /**
-     * API endpoint URL for batch uploads
+     * API endpoint URL for batch uploads (internal, not configurable by users)
      */
-    val uploadEndpoint: String,
+    internal val uploadEndpoint: String = "https://engineerakash.com/api/network-logs",
     
     /**
-     * Socket.IO endpoint URL for real-time uploads
+     * Socket.IO endpoint URL for real-time uploads (internal, not configurable by users)
      */
-    val socketEndpoint: String? = null,
+    internal val socketEndpoint: String = "https://engineerakash.com",
     
     /**
      * API key/token for authentication
@@ -25,9 +25,9 @@ data class MonitorConfig(
     val uploadIntervalMinutes: Long = 1L,
     
     /**
-     * Enable real-time socket uploads
+     * Enable real-time socket uploads (internal, controlled by server)
      */
-    val enableRealtimeUpload: Boolean = false,
+    internal val enableRealtimeUpload: Boolean = false,
     
     /**
      * Maximum request body size to capture (in bytes)
@@ -61,22 +61,16 @@ data class MonitorConfig(
      * Builder class for MonitorConfig
      */
     class Builder {
-        private var uploadEndpoint: String = ""
-        private var socketEndpoint: String? = null
         private var apiKey: String? = null
         private var uploadIntervalMinutes: Long = 1L
-        private var enableRealtimeUpload: Boolean = false
         private var maxRequestBodySize: Long = 1024 * 1024
         private var maxResponseBodySize: Long = 1024 * 1024
         private var includeUrlPatterns: List<String> = emptyList()
         private var excludeUrlPatterns: List<String> = emptyList()
         private var enabled: Boolean = true
         
-        fun uploadEndpoint(endpoint: String) = apply { this.uploadEndpoint = endpoint }
-        fun socketEndpoint(endpoint: String?) = apply { this.socketEndpoint = endpoint }
         fun apiKey(key: String?) = apply { this.apiKey = key }
         fun uploadIntervalMinutes(minutes: Long) = apply { this.uploadIntervalMinutes = minutes }
-        fun enableRealtimeUpload(enable: Boolean) = apply { this.enableRealtimeUpload = enable }
         fun maxRequestBodySize(size: Long) = apply { this.maxRequestBodySize = size }
         fun maxResponseBodySize(size: Long) = apply { this.maxResponseBodySize = size }
         fun includeUrlPatterns(patterns: List<String>) = apply { this.includeUrlPatterns = patterns }
@@ -84,13 +78,9 @@ data class MonitorConfig(
         fun enabled(enable: Boolean) = apply { this.enabled = enable }
         
         fun build(): MonitorConfig {
-            require(uploadEndpoint.isNotEmpty()) { "Upload endpoint is required" }
             return MonitorConfig(
-                uploadEndpoint = uploadEndpoint,
-                socketEndpoint = socketEndpoint,
                 apiKey = apiKey,
                 uploadIntervalMinutes = uploadIntervalMinutes,
-                enableRealtimeUpload = enableRealtimeUpload,
                 maxRequestBodySize = maxRequestBodySize,
                 maxResponseBodySize = maxResponseBodySize,
                 includeUrlPatterns = includeUrlPatterns,

@@ -1,13 +1,14 @@
 # Network Monitor SDK
 
-A lightweight Android SDK for monitoring and tracking network requests in your Android application. The SDK automatically intercepts HTTP/HTTPS requests, stores them in a local SQLite database, and uploads them to your server at regular intervals or in real-time via Socket.IO.
+A lightweight Android SDK for monitoring and tracking network requests in your Android application. The SDK automatically intercepts HTTP/HTTPS requests, stores them in a local SQLite database, and uploads them to [engineerakash.com](https://engineerakash.com) at regular intervals or in real-time via Socket.IO. View your network logs by logging into the dashboard at [engineerakash.com](https://engineerakash.com).
 
 ## Features
 
 - 🔍 **Automatic Network Interception** - Automatically tracks all network requests via OkHttp Interceptor
 - 💾 **Local Storage** - Stores requests, responses, headers, and metadata in SQLite database (Room)
-- ⏱️ **Periodic Uploads** - Uploads collected data to your server at configurable intervals (default: 1 minute)
-- ⚡ **Real-time Uploads** - Optional Socket.IO integration for near real-time monitoring
+- ⏱️ **Periodic Uploads** - Automatically uploads collected data to engineerakash.com at configurable intervals (default: 1 minute)
+- ⚡ **Real-time Uploads** - Server-controlled Socket.IO integration (automatically enabled when your device/userId is searched on the website)
+- 📊 **Web Dashboard** - View all network logs by logging into engineerakash.com
 - 🎯 **User Tracking** - Associate network requests with user IDs and custom properties
 - 🔒 **Privacy First** - Configurable URL filtering and data size limits
 - 📊 **MVVM Architecture** - Built with modern Android architecture patterns
@@ -32,7 +33,7 @@ dependencies {
     // Required dependencies
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     
-    // If using Socket.IO for real-time uploads
+    // Socket.IO for real-time uploads (included automatically)
     implementation 'io.socket:socket.io-client:2.1.0'
 }
 ```
@@ -56,11 +57,11 @@ class MyApplication : Application() {
         super.onCreate()
         
         // Initialize Network Monitor SDK
+        // Logs are automatically uploaded to https://engineerakash.com/api/network-logs
+        // Real-time uploads are automatically enabled by the server when needed
         val config = MonitorConfig.Builder()
-            .uploadEndpoint("https://your-api.com/network-logs")
-            .uploadIntervalMinutes(1)
-            .enableRealtimeUpload(false) // Set to true for Socket.IO real-time uploads
-            .apiKey("your-api-key") // Optional
+            // uploadIntervalMinutes is optional (defaults to 1 minute)
+            .apiKey("your-api-key") // Optional: for authentication
             .build()
         
         NetworkMonitor.init(this, config)
@@ -113,11 +114,8 @@ NetworkMonitor.resetProperties()
 
 | Method | Type | Default | Description |
 |--------|------|---------|-------------|
-| `uploadEndpoint(endpoint: String)` | String | **Required** | API endpoint URL for batch uploads |
-| `socketEndpoint(endpoint: String?)` | String? | `null` | Socket.IO endpoint URL for real-time uploads |
-| `apiKey(key: String?)` | String? | `null` | API key/token for authentication |
-| `uploadIntervalMinutes(minutes: Long)` | Long | `1` | Upload interval in minutes |
-| `enableRealtimeUpload(enable: Boolean)` | Boolean | `false` | Enable Socket.IO real-time uploads |
+| `apiKey(key: String?)` | String? | `null` | API key/token for authentication (optional) |
+| `uploadIntervalMinutes(minutes: Long)` | Long | `1` | Upload interval in minutes (optional, defaults to 1 minute) |
 | `maxRequestBodySize(size: Long)` | Long | `1048576` (1MB) | Maximum request body size to capture (bytes) |
 | `maxResponseBodySize(size: Long)` | Long | `1048576` (1MB) | Maximum response body size to capture (bytes) |
 | `includeUrlPatterns(patterns: List<String>)` | List<String> | `emptyList()` | Regex patterns for URLs to include |
@@ -129,8 +127,8 @@ NetworkMonitor.resetProperties()
 #### Basic Configuration
 
 ```kotlin
+// Minimal configuration - logs upload to https://engineerakash.com/api/network-logs
 val config = MonitorConfig.Builder()
-    .uploadEndpoint("https://api.example.com/logs")
     .build()
 ```
 
@@ -138,7 +136,6 @@ val config = MonitorConfig.Builder()
 
 ```kotlin
 val config = MonitorConfig.Builder()
-    .uploadEndpoint("https://api.example.com/logs")
     .uploadIntervalMinutes(2)
     .maxRequestBodySize(512 * 1024) // 512KB
     .maxResponseBodySize(512 * 1024) // 512KB
@@ -146,20 +143,14 @@ val config = MonitorConfig.Builder()
         ".*\\.googleapis\\.com.*",  // Exclude Google APIs
         ".*\\.facebook\\.com.*"      // Exclude Facebook APIs
     ))
-    .apiKey("your-api-key")
+    .apiKey("your-api-key") // Optional: for authentication
     .build()
 ```
 
-#### Real-time Upload Configuration
-
-```kotlin
-val config = MonitorConfig.Builder()
-    .uploadEndpoint("https://api.example.com/logs")
-    .socketEndpoint("https://socket.example.com")
-    .enableRealtimeUpload(true)
-    .apiKey("your-api-key")
-    .build()
-```
+> **Note:** 
+> - Upload endpoints are automatically set to `https://engineerakash.com/api/network-logs` (batch) and `https://engineerakash.com` (Socket.IO). These cannot be configured by users.
+> - Regular batch uploads continue automatically at the configured interval (default: 1 minute).
+> - Real-time uploads are automatically enabled by the server when someone searches for your device/userId on the website. You don't need to configure this - it's handled internally.
 
 ## API Reference
 
@@ -251,11 +242,22 @@ data class NetworkRequest(
 )
 ```
 
+## Viewing Network Logs
+
+All network logs are automatically uploaded to [engineerakash.com](https://engineerakash.com). To view your network logs:
+
+1. Log in to your account at [engineerakash.com](https://engineerakash.com)
+2. Navigate to the Network Monitor dashboard
+3. Search for a device/userId to view its network requests
+4. When you search for a device/userId, real-time uploads are automatically enabled for that device (if it's currently active)
+
+The SDK automatically associates logs with your account based on the API key provided during configuration (if set). Regular batch uploads continue at the configured interval (default: 1 minute), and real-time uploads are automatically enabled when that device/userId is being monitored on the website.
+
 ## Upload Format
 
 ### Batch Upload (HTTP POST)
 
-The SDK uploads data to your server via HTTP POST. The request body format:
+The SDK uploads data to `https://engineerakash.com/api/network-logs` via HTTP POST. The request body format:
 
 ```json
 {
@@ -287,7 +289,7 @@ The SDK uploads data to your server via HTTP POST. The request body format:
 
 ### Real-time Upload (Socket.IO)
 
-When real-time upload is enabled, each request is sent immediately via Socket.IO with the event name `network_request`:
+When real-time upload is automatically enabled by the server (when someone searches for your device/userId on the website), each request is sent immediately via Socket.IO to `https://engineerakash.com` with the event name `network_request`:
 
 ```javascript
 socket.on('network_request', (data) => {
@@ -311,7 +313,7 @@ The SDK follows MVVM architecture pattern:
 1. **Initialize Early**: Initialize the SDK in your Application class `onCreate()` method
 2. **Filter Sensitive Data**: Use `excludeUrlPatterns` to exclude sensitive endpoints
 3. **Set Size Limits**: Configure appropriate size limits for request/response bodies
-4. **Use Real-time Sparingly**: Real-time uploads consume more battery; use only when necessary
+4. **Real-time Uploads**: Real-time uploads are automatically controlled by the server - they're enabled only when someone searches for your device/userId on the website, so you don't need to worry about battery consumption
 5. **Handle User Privacy**: Reset user ID when users log out
 
 ## Privacy & Security
@@ -333,15 +335,16 @@ The SDK follows MVVM architecture pattern:
 ### Uploads not working
 
 1. Check network connectivity
-2. Verify upload endpoint URL is correct
+2. Verify you can access https://engineerakash.com
 3. Check API key/authentication if required
 4. Review server logs for errors
 
 ### Real-time uploads not working
 
-1. Ensure `enableRealtimeUpload` is set to `true`
-2. Verify `socketEndpoint` is configured
-3. Check Socket.IO server is running and accessible
+1. Real-time uploads are automatically enabled by the server when your device/userId is searched on the website
+2. Verify Socket.IO endpoint at https://engineerakash.com is accessible
+3. Check network connectivity and firewall settings
+4. Ensure someone has searched for your device/userId on the website dashboard
 
 ## License
 

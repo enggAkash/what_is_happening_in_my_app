@@ -30,7 +30,7 @@ class SocketManager(
      * Connect to socket server
      */
     fun connect() {
-        if (!config.enableRealtimeUpload || config.socketEndpoint == null) {
+        if (!config.enableRealtimeUpload) {
             return
         }
         
