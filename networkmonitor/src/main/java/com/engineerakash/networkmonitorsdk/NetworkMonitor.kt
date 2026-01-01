@@ -2,6 +2,8 @@ package com.engineerakash.networkmonitorsdk
 
 import android.content.Context
 import com.engineerakash.networkmonitorsdk.config.MonitorConfig
+import com.engineerakash.networkmonitorsdk.database.NetworkMonitorDatabase
+import com.engineerakash.networkmonitorsdk.database.repository.NetworkRequestRepository
 import com.engineerakash.networkmonitorsdk.interceptor.NetworkMonitorInterceptor
 
 /**
@@ -16,6 +18,13 @@ object NetworkMonitor {
     private var config: MonitorConfig? = null
     private var context: Context? = null
     private var interceptor: NetworkMonitorInterceptor? = null
+    private var repository: NetworkRequestRepository? = null
+    
+    @Volatile
+    private var userId: String? = null
+    
+    private val properties = mutableMapOf<String, String>()
+    private val propertiesLock = Any()
     
     /**
      * Initialize the Network Monitor SDK
@@ -30,13 +39,38 @@ object NetworkMonitor {
         
         synchronized(this) {
             if (!isInitialized) {
-                this.context = context.applicationContext
+                val appContext = context.applicationContext
+                this.context = appContext
                 this.config = config
-                this.interceptor = NetworkMonitorInterceptor()
-                // TODO: Initialize database, upload manager, socket manager
+                
+                // Initialize database and repository
+                val database = NetworkMonitorDatabase.getInstance(appContext)
+                this.repository = NetworkRequestRepository(database.networkRequestDao())
+                
+                // Initialize interceptor with dependencies
+                this.interceptor = NetworkMonitorInterceptor(
+                    repository = repository!!,
+                    config = config,
+                    getUserId = { userId },
+                    getProperties = {
+                        synchronized(propertiesLock) {
+                            properties.toMap()
+                        }
+                    }
+                )
+                
+                // TODO: Initialize upload manager, socket manager
                 isInitialized = true
             }
         }
+    }
+    
+    /**
+     * Get the interceptor instance to add to OkHttpClient
+     */
+    @JvmStatic
+    fun getInterceptor(): NetworkMonitorInterceptor? {
+        return interceptor
     }
     
     /**
@@ -45,7 +79,7 @@ object NetworkMonitor {
     @JvmStatic
     fun setUserId(userId: String) {
         check(isInitialized) { "NetworkMonitor must be initialized first. Call NetworkMonitor.init()" }
-        // TODO: Update user ID
+        this.userId = userId
     }
     
     /**
@@ -54,7 +88,7 @@ object NetworkMonitor {
     @JvmStatic
     fun resetUserId() {
         check(isInitialized) { "NetworkMonitor must be initialized first. Call NetworkMonitor.init()" }
-        // TODO: Reset user ID
+        this.userId = null
     }
     
     /**
@@ -63,7 +97,9 @@ object NetworkMonitor {
     @JvmStatic
     fun setProperty(key: String, value: String) {
         check(isInitialized) { "NetworkMonitor must be initialized first. Call NetworkMonitor.init()" }
-        // TODO: Set property
+        synchronized(propertiesLock) {
+            properties[key] = value
+        }
     }
     
     /**
@@ -72,7 +108,9 @@ object NetworkMonitor {
     @JvmStatic
     fun resetProperties() {
         check(isInitialized) { "NetworkMonitor must be initialized first. Call NetworkMonitor.init()" }
-        // TODO: Reset properties
+        synchronized(propertiesLock) {
+            properties.clear()
+        }
     }
     
     /**
