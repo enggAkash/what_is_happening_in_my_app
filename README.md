@@ -77,14 +77,21 @@ Don't forget to register your Application class in `AndroidManifest.xml`:
 </application>
 ```
 
-### 2. Add Interceptor to OkHttpClient
+### 2. That's It! Network Monitoring Works Automatically
+
+Once initialized, the SDK automatically monitors all network requests made through OkHttpClient and Retrofit. **No additional code is required!** The SDK automatically intercepts network requests, similar to Firebase Performance Monitoring.
+
+You can continue using OkHttpClient and Retrofit as you normally would:
 
 ```kotlin
-import com.engineerakash.networkmonitorsdk.NetworkMonitor
-import okhttp3.OkHttpClient
-
+// Your existing OkHttpClient code works automatically
 val okHttpClient = OkHttpClient.Builder()
-    .addInterceptor(NetworkMonitor.getInterceptor())
+    .build()
+
+// Your existing Retrofit code works automatically
+val retrofit = Retrofit.Builder()
+    .baseUrl("https://api.example.com")
+    .client(okHttpClient)
     .build()
 ```
 
@@ -165,14 +172,6 @@ Initialize the SDK. Must be called before using any other methods.
 
 ```kotlin
 NetworkMonitor.init(context, config)
-```
-
-##### `getInterceptor(): NetworkMonitorInterceptor`
-
-Returns the OkHttp interceptor to add to your OkHttpClient.
-
-```kotlin
-val interceptor = NetworkMonitor.getInterceptor()
 ```
 
 ##### `setUserId(userId: String)`
@@ -327,9 +326,9 @@ The SDK follows MVVM architecture pattern:
 
 ### SDK not capturing requests
 
-1. Ensure SDK is initialized before creating OkHttpClient
-2. Verify interceptor is added to OkHttpClient
-3. Check that monitoring is enabled in config
+1. Ensure SDK is initialized in your Application class before any network requests are made
+2. Check that monitoring is enabled in config (default: enabled)
+3. Verify the SDK is initialized before creating OkHttpClient instances
 
 ### Uploads not working
 

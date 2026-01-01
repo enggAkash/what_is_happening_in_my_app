@@ -15,6 +15,7 @@ object NetworkMonitor {
     
     private var config: MonitorConfig? = null
     private var context: Context? = null
+    private var interceptor: NetworkMonitorInterceptor? = null
     
     /**
      * Initialize the Network Monitor SDK
@@ -31,20 +32,11 @@ object NetworkMonitor {
             if (!isInitialized) {
                 this.context = context.applicationContext
                 this.config = config
+                this.interceptor = NetworkMonitorInterceptor()
                 // TODO: Initialize database, upload manager, socket manager
                 isInitialized = true
             }
         }
-    }
-    
-    /**
-     * Get the OkHttp interceptor to add to your OkHttpClient
-     */
-    @JvmStatic
-    fun getInterceptor(): NetworkMonitorInterceptor {
-        check(isInitialized) { "NetworkMonitor must be initialized first. Call NetworkMonitor.init()" }
-        // TODO: Return configured interceptor
-        return NetworkMonitorInterceptor()
     }
     
     /**

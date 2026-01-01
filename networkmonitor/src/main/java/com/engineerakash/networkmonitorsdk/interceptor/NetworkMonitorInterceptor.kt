@@ -6,8 +6,9 @@ import java.io.IOException
 
 /**
  * OkHttp Interceptor for monitoring network requests and responses
+ * Internal class - not exposed to users
  */
-class NetworkMonitorInterceptor : Interceptor {
+internal class NetworkMonitorInterceptor : Interceptor {
     
     override fun intercept(chain: Interceptor.Chain): Response {
         // TODO: Implement request/response interception and logging
