@@ -60,7 +60,6 @@ class MyApplication : Application() {
         // Logs are automatically uploaded to https://engineerakash.com/api/network-logs
         // Real-time uploads are automatically enabled by the server when needed
         val config = MonitorConfig.Builder()
-            // uploadIntervalMinutes is optional (defaults to 1 minute)
             .apiKey("your-api-key") // Optional: for authentication
             .build()
         
