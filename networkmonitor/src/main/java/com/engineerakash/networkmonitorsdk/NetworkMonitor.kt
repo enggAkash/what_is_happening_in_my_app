@@ -5,6 +5,7 @@ import com.engineerakash.networkmonitorsdk.config.MonitorConfig
 import com.engineerakash.networkmonitorsdk.database.NetworkMonitorDatabase
 import com.engineerakash.networkmonitorsdk.database.repository.NetworkRequestRepository
 import com.engineerakash.networkmonitorsdk.interceptor.NetworkMonitorInterceptor
+import okhttp3.Interceptor
 
 /**
  * Main SDK class for Network Monitoring
@@ -16,7 +17,6 @@ object NetworkMonitor {
     private var isInitialized = false
     
     private var config: MonitorConfig? = null
-    private var context: Context? = null
     private var interceptor: NetworkMonitorInterceptor? = null
     private var repository: NetworkRequestRepository? = null
     
@@ -40,7 +40,6 @@ object NetworkMonitor {
         synchronized(this) {
             if (!isInitialized) {
                 val appContext = context.applicationContext
-                this.context = appContext
                 this.config = config
                 
                 // Initialize database and repository
@@ -69,7 +68,7 @@ object NetworkMonitor {
      * Get the interceptor instance to add to OkHttpClient
      */
     @JvmStatic
-    fun getInterceptor(): NetworkMonitorInterceptor? {
+    fun getInterceptor(): Interceptor? {
         return interceptor
     }
     
@@ -118,5 +117,16 @@ object NetworkMonitor {
      */
     @JvmStatic
     fun isInitialized(): Boolean = isInitialized
+    
+    /**
+     * Get the database file path (useful for Database Inspector)
+     * @param context Application context (use applicationContext to avoid leaks)
+     * @return Database file path, or null if SDK is not initialized
+     */
+    @JvmStatic
+    fun getDatabasePath(context: Context): String? {
+        check(isInitialized) { "NetworkMonitor must be initialized first. Call NetworkMonitor.init()" }
+        return context.applicationContext.getDatabasePath("network_monitor_db")?.absolutePath
+    }
 }
 
